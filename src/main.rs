@@ -1,7 +1,7 @@
-mod colors;
+mod color;
 mod entities;
 
-use colors::Colors;
+use color::get_colors;
 use entities::{get_ticker_data, MarketState, Response};
 use std::{env, process};
 
@@ -53,15 +53,7 @@ fn main() {
         }
     };
 
-    let colors = if env::var("NO_COLOR").is_ok() {
-        Colors::monochrome()
-    } else {
-        Colors::new(
-            env::var("COLOR_GREEN").map_or(None, |v| Some(v)),
-            env::var("COLOR_RED").map_or(None, |v| Some(v)),
-            env::var("COLOR_BOLD").map_or(None, |v| Some(v)),
-        )
-    };
+    let colors = get_colors();
 
     for symbol in symbols {
         let result = res
@@ -75,19 +67,17 @@ fn main() {
             continue;
         }
 
-        let (symbol, market_state, price, diff, percent) = get_ticker_data(&result.unwrap());
+        let (symbol, market_state, price, diff, percent) = get_ticker_data(result.unwrap());
 
         let market_sign = match market_state {
             MarketState::Regular => "",
             _ => "*",
         };
 
-        let price_color = if diff > 0.0 {
-            &colors.green
-        } else if diff < 0.0 {
-            &colors.red
-        } else {
-            &colors.none
+        let price_color = match diff {
+            x if x > 0.0 => &colors.green,
+            x if x < 0.0 => &colors.red,
+            _ => &colors.none,
         };
 
         println!(
