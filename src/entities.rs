@@ -41,7 +41,7 @@ pub fn get_ticker_data(ticker: &Ticker) -> (&str, MarketState, f64, f64, f64) {
     let pre_market_change = ticker.pre_market_change.unwrap_or_default();
     let post_market_change = ticker.post_market_change.unwrap_or_default();
 
-    return if ticker.market_state == MarketState::Pre && pre_market_change != 0.0 {
+    if ticker.market_state == MarketState::Pre && pre_market_change != 0.0 {
         (
             &ticker.symbol,
             MarketState::Pre,
@@ -65,5 +65,5 @@ pub fn get_ticker_data(ticker: &Ticker) -> (&str, MarketState, f64, f64, f64) {
             ticker.regular_market_change.unwrap_or_default(),
             ticker.regular_market_change_percent.unwrap_or_default(),
         )
-    };
+    }
 }
