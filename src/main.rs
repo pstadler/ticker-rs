@@ -22,7 +22,7 @@ const FIELDS: [&str; 11] = [
 
 fn main() {
     let symbols: Vec<String> = env::args().collect::<Vec<String>>()[1..].to_vec();
-    if symbols.len() == 0 {
+    if symbols.is_empty() {
         println!("Usage: ticker AAPL MSFT GOOG BTC-USD");
         process::exit(1);
     }
@@ -35,7 +35,7 @@ fn main() {
     {
         Ok(r) => r,
         Err(err) => {
-            println!("Error calling API: {}", err.to_string());
+            println!("Error calling API: {}", err);
             process::exit(1);
         }
     };
@@ -48,7 +48,7 @@ fn main() {
     let res: Response = match res.json() {
         Ok(r) => r,
         Err(err) => {
-            println!("Error parsing response: {}", err.to_string());
+            println!("Error parsing response: {}", err);
             process::exit(1);
         }
     };
