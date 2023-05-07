@@ -5,7 +5,7 @@ use color::get_colors;
 use entities::{get_ticker_data, MarketState, Response};
 use std::{env, process};
 
-const API_ENDPOINT: &str = "https://query1.finance.yahoo.com/v7/finance/quote?lang=en-US&region=US&corsDomain=finance.yahoo.com";
+const API_ENDPOINT: &str = "https://query1.finance.yahoo.com/v6/finance/quote?lang=en-US&region=US&corsDomain=finance.yahoo.com";
 const FIELDS: [&str; 11] = [
     "symbol",
     "marketState",
