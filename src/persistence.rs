@@ -1,4 +1,4 @@
-use std::{env::temp_dir, fs};
+use std::{env::temp_dir, fs, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -6,14 +6,13 @@ use serde::{Deserialize, Serialize};
 pub struct Session {
     pub cookies: String,
     pub crumb: String,
+    path: PathBuf,
 }
 
 impl Session {
-    const FILE_NAME: &str = "ticker-rs";
-
     pub fn load() -> Self {
         let mut path = temp_dir();
-        path.push(Session::FILE_NAME);
+        path.push(format!("{}-{}", "ticker-rs", whoami::username()));
 
         if path.exists() {
             return serde_json::from_str(&fs::read_to_string(path).unwrap_or_default()).unwrap();
@@ -22,14 +21,12 @@ impl Session {
         Self {
             cookies: "".to_string(),
             crumb: "".to_string(),
+            path,
         }
     }
 
     pub fn persist(&mut self) -> Result<(), String> {
-        let mut path = temp_dir();
-        path.push(Session::FILE_NAME);
-
-        match fs::write(path, serde_json::to_string(self).unwrap()) {
+        match fs::write(&self.path, serde_json::to_string(self).unwrap()) {
             Ok(_) => (),
             Err(err) => return Err(format!("Error writing temporary file: {}", err)),
         }
