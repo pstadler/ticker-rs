@@ -1,24 +1,12 @@
+mod client;
 mod color;
 mod entities;
+mod persistence;
 
+use client::Client;
 use color::get_colors;
-use entities::{get_ticker_data, MarketState, Response};
+use entities::{get_ticker_data, MarketState};
 use std::{env, process};
-
-const API_ENDPOINT: &str = "https://query1.finance.yahoo.com/v6/finance/quote?lang=en-US&region=US&corsDomain=finance.yahoo.com";
-const FIELDS: [&str; 11] = [
-    "symbol",
-    "marketState",
-    "regularMarketPrice",
-    "regularMarketChange",
-    "regularMarketChangePercent",
-    "preMarketPrice",
-    "preMarketChange",
-    "preMarketChangePercent",
-    "postMarketPrice",
-    "postMarketChange",
-    "postMarketChangePercent",
-];
 
 fn main() {
     let symbols: Vec<String> = env::args().collect::<Vec<String>>()[1..].to_vec();
@@ -27,28 +15,12 @@ fn main() {
         process::exit(1);
     }
 
-    let res = match reqwest::blocking::Client::new()
-        .get(API_ENDPOINT)
-        .query(&[("fields", FIELDS.join(",")), ("symbols", symbols.join(","))])
-        .header(reqwest::header::ACCEPT_ENCODING, "application/json")
-        .send()
-    {
+    let mut client = Client::new();
+
+    let res = match client.fetch_quotes(&symbols) {
         Ok(r) => r,
         Err(err) => {
-            println!("Error calling API: {}", err);
-            process::exit(1);
-        }
-    };
-
-    if !res.status().is_success() {
-        println!("Error calling API: {}", res.status());
-        process::exit(1);
-    }
-
-    let res: Response = match res.json() {
-        Ok(r) => r,
-        Err(err) => {
-            println!("Error parsing response: {}", err);
+            println!("{}", err);
             process::exit(1);
         }
     };
