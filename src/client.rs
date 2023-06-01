@@ -98,7 +98,6 @@ impl Client {
                 ("symbols", symbols.join(",")),
                 ("crumb", self.session.crumb.clone()),
             ])
-            .header(reqwest::header::ACCEPT_ENCODING, "application/json")
             .send()
     }
 
