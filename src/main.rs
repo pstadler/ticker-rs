@@ -17,22 +17,22 @@ fn main() {
 
     let mut client = Client::new();
 
-    let res = match client.fetch_quotes(&symbols) {
-        Ok(r) => r,
-        Err(err) => {
-            println!("{}", err);
-            process::exit(1);
-        }
-    };
+    let res = client
+        .fetch_quotes(&symbols)
+        .map_err(|e| {
+            println!("{}", e);
+            process::exit(-1)
+        })
+        .unwrap();
 
     let colors = get_colors();
 
-    for symbol in symbols {
+    for symbol in symbols.iter() {
         let result = res
             .quote_response
             .result
             .iter()
-            .find(|r| r.symbol == symbol);
+            .find(|r| &r.symbol == symbol);
 
         if result.is_none() {
             println!("No results for symbol \"{}\"", symbol);

@@ -25,13 +25,13 @@ impl Session {
         }
     }
 
-    pub fn persist(&mut self) -> Result<(), String> {
-        match fs::write(&self.path, serde_json::to_string(self).unwrap()) {
-            Ok(_) => (),
-            Err(err) => return Err(format!("Error writing temporary file: {}", err)),
-        }
-
-        Ok(())
+    pub fn persist(&mut self) -> Result<(), std::io::Error> {
+        fs::write(
+            &self.path,
+            serde_json::to_string(self)
+                .map_err(|e| format!("Error writing temporary file: {}", e))
+                .unwrap(),
+        )
     }
 
     pub fn is_empty(&self) -> bool {

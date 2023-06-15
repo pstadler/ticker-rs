@@ -1,5 +1,3 @@
-use core::panic;
-
 use crate::entities;
 use crate::persistence;
 use reqwest::{
@@ -32,14 +30,11 @@ impl Client {
         let mut headers = HeaderMap::new();
         headers.insert(header::ACCEPT, HeaderValue::from_static("application/json"));
 
-        let client = match BlockingClient::builder()
+        let client = BlockingClient::builder()
             .cookie_store(true)
             .default_headers(headers)
             .build()
-        {
-            Ok(r) => r,
-            Err(err) => panic!("Error building client: {}", err),
-        };
+            .unwrap();
 
         let session = persistence::Session::load();
 
@@ -47,15 +42,12 @@ impl Client {
     }
 
     fn preflight(&mut self) -> Result<(), String> {
-        let res = match self
+        let res = self
             .client
             .get("https://finance.yahoo.com")
             .header(header::ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"))
             .send()
-        {
-            Ok(r) => r,
-            Err(err) => return Err(format!("Error getting session during preflight: {}", err)),
-        };
+            .map_err(|e| format!("Error getting session during preflight: {}", e))?;
 
         let cookies = res
             .headers()
@@ -65,23 +57,19 @@ impl Client {
             .collect::<Vec<&str>>()
             .join(",");
 
-        let res = match self
+        let res = self
             .client
             .get("https://query1.finance.yahoo.com/v1/test/getcrumb")
             .send()
-        {
-            Ok(r) => r,
-            Err(err) => return Err(format!("Error fetching crumb during preflight: {}", err)),
-        };
+            .map_err(|e| format!("Error fetching crumb during preflight: {}", e))?;
 
-        let crumb = match res.text() {
-            Ok(r) => r,
-            Err(err) => return Err(format!("Error fetching crumb during preflight: {}", err)),
-        };
+        let crumb = res
+            .text()
+            .map_err(|e| format!("Error fetching crumb during preflight: {}", e))?;
 
         self.session.crumb = crumb;
         self.session.cookies = cookies;
-        self.session.persist().expect("Error persiting session.");
+        self.session.persist().expect("Error persisting session.");
 
         Ok(())
     }
@@ -103,15 +91,12 @@ impl Client {
 
     pub fn fetch_quotes(&mut self, symbols: &[String]) -> Result<entities::Response, String> {
         if self.session.is_empty() {
-            match self.preflight() {
-                Ok(_) => (),
-                Err(err) => return Err(err),
-            };
+            self.preflight()?;
         }
-        let mut res: reqwest::blocking::Response = match self._fetch_quotes(symbols) {
-            Ok(r) => r,
-            Err(err) => return Err(format!("Error fetching quotes: {}", err)),
-        };
+
+        let mut res: reqwest::blocking::Response = self
+            ._fetch_quotes(symbols)
+            .map_err(|e| format!("Error fetching quotes: {}", e))?;
 
         if !res.status().is_success() {
             if res.status() != reqwest::StatusCode::UNAUTHORIZED {
@@ -119,20 +104,14 @@ impl Client {
             }
 
             // acquire new session and retry once if 401
-            match self.preflight() {
-                Ok(_) => (),
-                Err(err) => return Err(err),
-            };
+            self.preflight()?;
 
-            res = match self._fetch_quotes(symbols) {
-                Ok(r) => r,
-                Err(err) => return Err(format!("Error fetching quotes: {}", err)),
-            };
+            res = self
+                ._fetch_quotes(symbols)
+                .map_err(|e| format!("Error fetching quotes: {}", e))?;
         }
 
-        match res.json() {
-            Ok(r) => Ok(r),
-            Err(err) => Err(format!("Error parsing response: {}", err)),
-        }
+        res.json()
+            .map_err(|e| format!("Error parsing response: {}", e))
     }
 }
