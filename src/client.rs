@@ -44,7 +44,7 @@ impl Client {
     fn preflight(&mut self) -> Result<(), String> {
         let res = self
             .client
-            .get("https://finance.yahoo.com")
+            .get("https://fc.yahoo.com")
             .header(header::ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"))
             .send()
             .map_err(|e| format!("Error getting session during preflight: {}", e))?;
